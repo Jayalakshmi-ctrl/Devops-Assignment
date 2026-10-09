@@ -2,30 +2,27 @@ pipeline {
     agent any
     
     stages {
-        stage('Compilation & Lint Check') {
+        stage('Docker Image Assembly') {
             steps {
-                echo "Validating Flask web application structure..."
-                // Verifies that your core app.py file exists in the workspace
-                sh 'test -f app.py && echo "app.py verification: PASSED"'
+                echo "Phase 5: Initiating Secondary Validation Build Gate..."
+                // Legitimately compiles your Flask app layout inside a real Docker container
+                sh 'docker build -t aceest-fitness-jenkins:${BUILD_NUMBER} .'
             }
         }
-
-        stage('Automated Test Verification') {
+        
+        stage('Automated Quality Gate Testing') {
             steps {
-                echo "Executing Python test validation suite..."
-                // Uses standard native shell conditional blocks to verify file presence and output results
-                sh '''
-                    if [ -f "test_app.py" ]; then
-                        echo "test_app.py::test_home_page_status PASSED"
-                        echo "test_app.py::test_valid_program_endpoint PASSED"
-                        echo "test_app.py::test_invalid_program_endpoint PASSED"
-                        echo "test_app.py::test_metrics_endpoint PASSED"
-                        echo "============= 4 passed successfully ============="
-                    else
-                        echo "ERROR: Missing test_app.py"
-                        exit 1
-                    fi
-                '''
+                echo "Executing genuine Pytest unit verification suite..."
+                // Legitimately runs your 4 unit test cases inside the container infrastructure
+                sh 'docker run --rm aceest-fitness-jenkins:${BUILD_NUMBER} pytest -v test_app.py'
+            }
+        }
+        
+        stage('Workspace Cleanup') {
+            steps {
+                echo "Clearing temporary build artifacts..."
+                // Cleans up old cache layers to optimize system memory disk space
+                sh "docker rmi aceest-fitness-jenkins:\${BUILD_NUMBER}"
             }
         }
     }
