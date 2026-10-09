@@ -2,60 +2,92 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ACEest Fitness and Gym</title>
+    <title>ACEest Fitness & Performance</title>
     <style>
         body { background-color: #1a1a1a; color: white; font-family: Arial, sans-serif; margin: 0; }
         header { background-color: #d4af37; color: black; text-align: center; padding: 20px; font-weight: bold; font-size: 24px; }
         .container { display: flex; padding: 20px; gap: 20px; }
-        .left-panel { width: 30%; border: 2px solid #d4af37; padding: 15px; border-radius: 5px; }
-        .right-panel { width: 70%; display: flex; flex-direction: column; gap: 20px; }
-        .card { border: 1px solid #d4af37; padding: 15px; border-radius: 5px; min-height: 100px; white-space: pre-line; }
-        select { width: 100%; padding: 10px; background: #333; color: white; border: 1px solid #ddd; }
-        .metrics { margin-top: 30px; background: #333; padding: 10px; font-family: monospace; color: #ddd; }
+        .left-panel { width: 35%; border: 2px solid #d4af37; padding: 15px; border-radius: 5px; }
+        .right-panel { width: 65%; display: flex; flex-direction: column; gap: 20px; }
+        .card { border: 1px solid #d4af37; padding: 15px; border-radius: 5px; min-height: 100px; white-space: pre-line; background: #111; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 4px; font-size: 14px; }
+        input, select { width: 95%; padding: 8px; background: #333; color: white; border: 1px solid #d4af37; border-radius: 4px; }
+        button { background-color: #d4af37; color: black; border: none; padding: 10px 15px; font-weight: bold; cursor: pointer; width: 100%; border-radius: 4px; }
+        .calorie-highlight { font-size: 18px; color: #d4af37; font-weight: bold; text-align: center; margin-top: 15px; }
     </style>
 </head>
 <body>
-    <header>ACEest FUNCTIONAL FITNESS</header>
+    <header>ACEest FUNCTIONAL FITNESS SYSTEM</header>
     <div class="container">
         <div class="left-panel">
             <h3>Client Profile</h3>
-            <label for="prog-select">Select Program:</label><br><br>
-            <select id="prog-select" onchange="updateDisplay()">
-                <option value="">-- Choose Program --</option>
-                {% for key, val in programs.items() %}
-                    <option value="{{ key }}">{{ val.name }}</option>
-                {% endfor %}
-            </select>
-            <div class="metrics">
-                CAPACITY: {{ metrics.capacity }} Users<br>
-                AREA: {{ metrics.area_sq_ft }} sq ft<br>
-                BREAK-EVEN: {{ metrics.break_even_members }} Members
+            <div class="input-group"><label>Name</label><input type="text" id="name"></div>
+            <div class="input-group"><label>Age</label><input type="number" id="age"></div>
+            <div class="input-group"><label>Weight (kg)</label><input type="number" step="0.1" id="weight" oninput="runCalorieCalculation()"></div>
+            <div class="input-group">
+                <label>Program</label>
+                <select id="program" onchange="updateProgramDetails()">
+                    <option value="">-- Select Profile --</option>
+                    {% for k, v in programs.items() %}
+                        <option value="{{ k }}">{{ v.name }}</option>
+                    {% endfor %}
+                </select>
             </div>
+            <div class="input-group">
+                <label>Weekly Adherence: <span id="adh-val">0</span>%</label>
+                <input type="range" id="adherence" min="0" max="100" value="0" oninput="document.getElementById('adh-val').innerText=this.value">
+            </div>
+            <button onclick="saveClientDetails()">Save Client</button>
+            <div class="calorie-highlight" id="calorie-display">Estimated Calories: --</div>
         </div>
         <div class="right-panel">
             <div class="card">
-                <h4 style="color: #d4af37; margin-top:0;">Weekly Workout Chart</h4>
-                <div id="workout-display">Select a profile to view workout</div>
+                <h4 style="color: #d4af37; margin: 0 0 10px 0;">Weekly Training Plan</h4>
+                <div id="workout-display">Select a profile to view training details</div>
             </div>
             <div class="card">
-                <h4 style="color: #d4af37; margin-top:0;">Daily Nutrition Plan (Tamil Nadu Context)</h4>
-                <div id="diet-display">Select a profile to view diet</div>
+                <h4 style="color: #d4af37; margin: 0 0 10px 0;">Nutrition Plan (TN Context)</h4>
+                <div id="diet-display">Select a profile to view dietary structure</div>
             </div>
         </div>
     </div>
     <script>
-        function updateDisplay() {
-            const val = document.getElementById('prog-select').value;
-            if(!val) return;
-            fetch('/api/programs/' + val)
+        function updateProgramDetails() {
+            const prog = document.getElementById('program').value;
+            if (!prog) return;
+            fetch('/api/programs/' + prog)
                 .then(res => res.json())
                 .then(data => {
-                    const wDisp = document.getElementById('workout-display');
-                    wDisp.innerText = data.workout;
-                    wDisp.style.color = data.color;
+                    const wBox = document.getElementById('workout-display');
+                    wBox.innerText = data.workout;
+                    wBox.style.color = data.color;
                     document.getElementById('diet-display').innerText = data.diet;
+                    runCalorieCalculation();
                 });
+        }
+        function runCalorieCalculation() {
+            const weight = document.getElementById('weight').value;
+            const program = document.getElementById('program').value;
+            if (!weight || !program) return;
+            fetch('/api/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ weight: weight, program: program })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('calorie-display').innerText = `Estimated Calories: ${data.estimated_calories || 0} kcal`;
+            });
+        }
+        function saveClientDetails() {
+            const name = document.getElementById('name').value;
+            const prog = document.getElementById('program').value;
+            const adh = document.getElementById('adherence').value;
+            if (!name || !prog) { alert("Please enter client details."); return; }
+            alert(`Client ${name} saved successfully!\nAdherence Level: ${adh}%`);
         }
     </script>
 </body>
 </html>
+
