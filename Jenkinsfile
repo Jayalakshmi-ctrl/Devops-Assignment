@@ -1,21 +1,26 @@
 pipeline {
     agent any
+    
+    environment {
+        // Automatically selects the best available python command on the machine
+        PYTHON_CMD = sh(script: 'command -v python3 || command -v python', returnStdout: true).trim()
+    }
+    
     stages {
-        stage('Checkout Codebase') {
-            steps {
-                // Pulls the latest code directly from your repository
-                git branch: 'main', url: 'https://github.com'
-            }
-        }
         stage('Clean Environment Setup') {
             steps {
-                // Sets up an isolated sandbox on the build server
-                sh 'python3 -m venv venv && ./venv/bin/pip install -r requirements.txt'
+                // Installs pinned dependencies inside an isolated workspace virtual environment
+                sh """
+                    \${PYTHON_CMD} -m venv venv
+                    ./venv/bin/pip install --upgrade pip
+                    ./venv/bin/pip install -r requirements.txt
+                """
             }
         }
+        
         stage('Compilation & Execution Check') {
             steps {
-                // Verifies application logic runs cleanly
+                // Strictly validates the application core logic files for syntax accuracy
                 sh './venv/bin/python -m py_compile app.py'
             }
         }
