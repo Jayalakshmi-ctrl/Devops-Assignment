@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ACEest Fitness and Gym</title>
+    <style>
+        body { background-color: #1a1a1a; color: white; font-family: Arial, sans-serif; margin: 0; }
+        header { background-color: #d4af37; color: black; text-align: center; padding: 20px; font-weight: bold; font-size: 24px; }
+        .container { display: flex; padding: 20px; gap: 20px; }
+        .left-panel { width: 30%; border: 2px solid #d4af37; padding: 15px; border-radius: 5px; }
+        .right-panel { width: 70%; display: flex; flex-direction: column; gap: 20px; }
+        .card { border: 1px solid #d4af37; padding: 15px; border-radius: 5px; min-height: 100px; white-space: pre-line; }
+        select { width: 100%; padding: 10px; background: #333; color: white; border: 1px solid #ddd; }
+        .metrics { margin-top: 30px; background: #333; padding: 10px; font-family: monospace; color: #ddd; }
+    </style>
+</head>
+<body>
+    <header>ACEest FUNCTIONAL FITNESS</header>
+    <div class="container">
+        <div class="left-panel">
+            <h3>Client Profile</h3>
+            <label for="prog-select">Select Program:</label><br><br>
+            <select id="prog-select" onchange="updateDisplay()">
+                <option value="">-- Choose Program --</option>
+                {% for key, val in programs.items() %}
+                    <option value="{{ key }}">{{ val.name }}</option>
+                {% endfor %}
+            </select>
+            <div class="metrics">
+                CAPACITY: {{ metrics.capacity }} Users<br>
+                AREA: {{ metrics.area_sq_ft }} sq ft<br>
+                BREAK-EVEN: {{ metrics.break_even_members }} Members
+            </div>
+        </div>
+        <div class="right-panel">
+            <div class="card">
+                <h4 style="color: #d4af37; margin-top:0;">Weekly Workout Chart</h4>
+                <div id="workout-display">Select a profile to view workout</div>
+            </div>
+            <div class="card">
+                <h4 style="color: #d4af37; margin-top:0;">Daily Nutrition Plan (Tamil Nadu Context)</h4>
+                <div id="diet-display">Select a profile to view diet</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function updateDisplay() {
+            const val = document.getElementById('prog-select').value;
+            if(!val) return;
+            fetch('/api/programs/' + val)
+                .then(res => res.json())
+                .then(data => {
+                    const wDisp = document.getElementById('workout-display');
+                    wDisp.innerText = data.workout;
+                    wDisp.style.color = data.color;
+                    document.getElementById('diet-display').innerText = data.diet;
+                });
+        }
+    </script>
+</body>
+</html>
