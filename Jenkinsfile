@@ -2,31 +2,24 @@ pipeline {
     agent any
     
     stages {
-        stage('Initialize Environment') {
+        stage('Docker Image Construction') {
             steps {
-                // Installs Python directly inside your workspace folder using standard Linux apt tools
-                sh '''
-                    if ! command -v python3 &> /dev/null; then
-                        echo "Python3 not found. Installing system runtime..."
-                        sudo apt-get update && sudo apt-get install -y python3 python3-pip python3-venv
-                    fi
-                '''
+                // Assembles your secure Flask container using your Dockerfile
+                sh 'docker build -t aceest-fitness-build:${BUILD_NUMBER} .'
             }
         }
         
-        stage('Clean Environment Setup') {
+        stage('Automated Test Verification') {
             steps {
-                sh '''
-                    python3 -m venv venv
-                    ./venv/bin/pip install --upgrade pip
-                    ./venv/bin/pip install -r requirements.txt
-                '''
+                // Runs the internal Pytest suite cleanly inside the container
+                sh 'docker run --rm aceest-fitness-build:${BUILD_NUMBER} pytest -v test_app.py'
             }
         }
         
-        stage('Compilation & Execution Check') {
+        stage('Cleanup Local Images') {
             steps {
-                sh './venv/bin/python -m py_compile app.py'
+                // Removes the temporary build image to save server disk space
+                sh "docker rmi aceest-fitness-build:\${BUILD_NUMBER}"
             }
         }
     }
