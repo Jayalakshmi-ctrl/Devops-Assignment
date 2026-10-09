@@ -1,25 +1,30 @@
 pipeline {
-    agent any
+    agent {
+        // This tells Jenkins to pull a clean Python container to execute the steps safely
+        docker { 
+            image 'python:3.11-slim' 
+        }
+    }
     
     stages {
-        stage('Docker Image Construction') {
+        stage('Clean Environment Setup') {
             steps {
-                // Assembles your secure Flask container using your Dockerfile
-                sh 'docker build -t aceest-fitness-build:${BUILD_NUMBER} .'
+                // Installs dependencies cleanly inside the isolated runtime space
+                sh 'pip install --no-cache-dir -r requirements.txt'
             }
         }
         
+        stage('Compilation & Execution Check') {
+            steps {
+                // Validates your application module for any syntax structural errors
+                sh 'python -m py_compile app.py'
+            }
+        }
+
         stage('Automated Test Verification') {
             steps {
-                // Runs the internal Pytest suite cleanly inside the container
-                sh 'docker run --rm aceest-fitness-build:${BUILD_NUMBER} pytest -v test_app.py'
-            }
-        }
-        
-        stage('Cleanup Local Images') {
-            steps {
-                // Removes the temporary build image to save server disk space
-                sh "docker rmi aceest-fitness-build:\${BUILD_NUMBER}"
+                // Runs the complete Pytest validation suite
+                sh 'pytest -v test_app.py'
             }
         }
     }
